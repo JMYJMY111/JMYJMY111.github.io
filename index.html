@@ -7540,20 +7540,173 @@ Historical air quality index open data (from 2016-2025) were fetched from Minist
 The proposed frameworks aim to:
 </p>
 <h3 id="(2)-Generate-a-24-hour-predictive-model-of-the-Air-Quality-Index-(AQI)">(2) Generate a 24-hour predictive model of the Air Quality Index (AQI)<a class="anchor-link" href="#(2)-Generate-a-24-hour-predictive-model-of-the-Air-Quality-Index-(AQI)">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
-(I) Simple Neural Network Model (David)
+(2.1) Simple Neural Network Model (David)
 </p>
-<p>Neural network-based spatial interpolation for Air Quality Index (AQI) data from sparse monitoring stations.</p>
-<p>Selected columns:<br/>
-Target variable: AQI<br/>
-Predictors: so2, co, pm10, pm2.5, no2, no<br/></p>
 <p style="text-align: left; font-size: 18px; color: #333;">
-(II) Forecasting AQI 24 hours using *XGBoost* (Dini)
+Neural network-based spatial interpolation for Air Quality Index (AQI) data from sparse monitoring stations.<br/>
+<strong>Workflow:</strong><br/>
+1.Check missing values<br/>
+2.Fill missing values<br/>
+3.Smooth values (Avoid the outliers)<br/>
+4.Resampling to reduce the size<br/>
 </p>
-Predict and forecast AQI over a one-year period using the XGBoost model.
-
+<div style="display: flex; justify-content: center; gap: 30px;">
+<div style="width: 45%; font-size: 14px; text-align: left;">
+<p><strong>Data Summary</strong></p>
+<p>
+<strong>Target variable:</strong> AQI<br/>
+      Predictors:<br/>
+      SO2: from industrial sources<br/>
+      CO: mainly from vehicles<br/>
+      PM10: dust and larger particles<br/>
+      PM2.5: fine particles, most health-threatening<br/>
+      NO2: from combustion sources<br/>
+      NO: from vehicle emissions<br/>
+      72 stations data were used, each station contains 12194 observations (after resampling)<br/>
+</p>
+<p><strong>Objectives</strong></p>
+<p>
+      To obtain the continuous map of AQI values for entire Taiwan.
+    </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Neural Network Architecture</strong></p>
+<p>
+      Input Layer: Receives all the information (location, time, environmental data)<br/>
+      Hidden Layer 1: 128 artificial neurons (initial pattern detection)<br/>
+      Hidden Layer 2: 256 neurons (finding more complex patterns)<br/>
+      Hidden Layer 3: 512 neurons (advanced pattern analysis)<br/>
+      Hidden Layer 4: 1,024 neurons (the "thinking center" - maximum complexity)<br/>
+      Hidden Layer 5: 512 neurons (pattern refinement)<br/>
+      Hidden Layer 6: 256 neurons (pattern consolidation)<br/>
+      Hidden Layer 7: 128 neurons (final pattern preparation)<br/>
+      Output Layer: 1 neuron (produces the air quality prediction)<br/>
+</p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p>
+<strong>Optimizer:</strong> AdamW<br/>
+<br/>
+<strong>Learning Parameters</strong><br/>
+      Learning Rate: 0.001<br/>
+      Beta_1: 0.9 (how much it remembers from recent lessons)<br/>
+      Beta_2: 0.999 (how much it remembers from long-term patterns)<br/>
+      Weight Decay: 0.01<br/>
+      Epochs: 300<br/>
+      Early stopping: after 20 epochs without improvement<br/>
+</p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p>
+<strong>L2 Regularization:</strong> 0.001<br/>
+<strong>Dropout Regularization:</strong><br/>
+      Layer 1: Ignores 20% of neurons randomly<br/>
+      Layer 2: Ignores 25% of neurons randomly<br/>
+      Layer 3: Ignores 30% of neurons randomly<br/>
+      Layer 4: Ignores 40% of neurons randomly (maximum dropout at the most complex layer)<br/>
+      Layer 5, 6, 7 → 30% , 25% , 20% , respectively<br/>
+</p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p>
+<strong>Data Splitting Strategy</strong><br/>
+      Training Data: 75%<br/>
+      Validation Data: 15%<br/>
+      Test Data: 10%<br/>
+<strong>Multiple performance metrics to ensure high-quality predictions:</strong><br/>
+      Mean Absolute Error (MAE)<br/>
+      Mean Squared Error (MSE)<br/>
+      R-squared<br/>
+      Mean Absolute Percentage Error<br/>
+</p>
+</div>
+</div>
+<p style="text-align: left; font-size: 18px; color: #333;">
+(2.2) Forecasting AQI 24 hours using *XGBoost* (Dini)
+</p>
+<p style="text-align: left; font-size: 18px; color: #333;">
+Predict and forecast AQI over a one-year period using the XGBoost model.<br/>
+<strong>Workflow:</strong><br/>
+</p>
+<div style="display: flex; justify-content: center; gap: 30px;">
+<div style="width: 45%; font-size: 14px; text-align: left;">
+<p><strong>Data Acquisition and Preprocessing</strong></p>
+<p>
+    The data used in this study consist of historical records from 2016 to 2025, including AQI and air pollution indicators (SO₂, CO, O₃, PM₁₀, PM₂.₅, NO₂, NOₓ, and NO), obtained from the Taiwan Ministry of Environment (https://data.moenv.gov.tw/en/dataset/detail/AQX_P_488). The dataset includes observations from 75 monitoring stations. All zero values in both the predictors and the target variable were removed prior to further analysis, as this approach was found to be more effective and resulted in a lower RMSE compared to using linear interpolation to handle missing values.
+    </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Feature Engineering</strong></p>
+<p>
+      Feature engineering plays a vital role in time series forecasting, particularly when using boosting models that do not inherently capture temporal dependencies. The forecast horizon refers to the future time period we aim to predict—ranging from short-term (under three months) to long-term (over two years). To provide temporal context, we include datetime features such as hour, day of week, month, and day of year. In addition, we engineer seasonal and trend components for selected pollutant variables (e.g., aqi_seasonal, so2_trend) to capture underlying patterns and long-term shifts in the data. Since the AQI for a given day must be predicted without using its actual values at inference time, we incorporate lag features—specifically aqi_lag1, aqi_lag24, and aqi_lag168—to represent values from 1 hour, 1 day, and 7 days prior, respectively. We also use current values of other pollutant variables (excluding aqi) as predictors. Altogether, these features—totaling 33—allow the model to learn from temporal patterns, trends, and pollution-related interactions, improving its ability to accurately forecast AQI levels.
+    </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Split Training and Testing Data</strong></p>
+<p>
+      To evaluate the model's performance robustly over time, a time series cross-validation approach was applied using 5-fold expanding window splitting using TimeSeriesSplit in sklearn. To split the dataset into training and testing sets while preserving the chronological order of time series data, the TimeSeriesSplit function from the sklearn.model_selection module was used. Each test set corresponds to one year of hourly data (24 hours × 365 days). A gap of 24 hours (1 day) is introduced between the end of the training set and the start of the test set to avoid data leakage. This approach ensures that future data is never used to predict the past, maintaining the temporal integrity of the forecasting task.
+    </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Model XGBoost</strong></p>
+<p>
+      For the modeling stage, we employed XGBoost (Extreme Gradient Boosting), a powerful tree-based ensemble algorithm known for its high accuracy and efficiency. XGBoost builds models sequentially using gradient boosting and includes regularization to reduce overfitting. The model was configured with the following key parameters: n_estimators=1500 to allow enough boosting rounds, learning_rate=0.01 for gradual learning, and max_depth=3 to control model complexity. We used booster='gbtree' for tree-based learners and set objective='reg:squarederror' for regression tasks. An early_stopping_rounds=50 was applied to halt training when validation performance stopped improving. This setup aimed to balance learning stability and predictive accuracy for AQI forecasting.
+    </p>
+</div>
+</div>
 <h3 id="(3)-Implement-anomaly-detection-algorithms-for-identifying-statistically-significant-pollution-events.-(Jimmy)">(3) Implement anomaly detection algorithms for identifying statistically significant pollution events. (Jimmy)<a class="anchor-link" href="#(3)-Implement-anomaly-detection-algorithms-for-identifying-statistically-significant-pollution-events.-(Jimmy)">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
-Apply an anomaly event detection framework to air pollutants by using Supervised Random Forest.
+Apply an anomaly event detection framework to air pollutants by using Supervised Random Forest.<br/>
+<strong>Workflow:</strong>
 </p>
+<div style="display: flex; justify-content: center; gap: 30px;">
+<div style="width: 45%; font-size: 14px; text-align: left;">
+<p><strong>Data Preprocessing and Label</strong></p>
+<p>
+<strong>Target variable:</strong> AQI Anomaly (any pollutant exceeds 95th percentile of its values at that station)<br/>
+<strong>Features:</strong> SO2, CO, O3, PM2.5, PM10, NO2<br/>
+       Additional temporal features: Hour of day, Month of year<br/>
+       Statistical features: 4-period (24-hour) rolling mean and standard deviation for each pollutant<br/>
+       All negative and extreme values removed, then resampled at 6-hour intervals<br/>
+       71 stations used, with 837,215 valid observations after cleaning and resampling<br/>
+</p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Hyperparameter Tuning</strong></p>
+<p>
+       GridSearchCV was applied with TimeSeriesSplit (5 folds) to maintain temporal consistency.<br/>
+       Parameters tuned:<br/>
+       - Number of Trees (`n_estimators`): [100, 200, 300]<br/>
+       - Tree Depth (`max_depth`): [5, 10, 20, None]<br/>
+       - Minimum samples to split (`min_samples_split`): [2, 5, 10]<br/>
+       - Minimum samples at leaf (`min_samples_leaf`): [1, 2, 4]<br/>
+       Best configuration found: <br/>
+       → n_estimators=100, max_depth=10, min_samples_split=2, min_samples_leaf=1
+     </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Evaluation Metrics</strong></p>
+<p>
+<strong>Binary Classification Metrics:</strong><br/>
+       - Accuracy<br/>
+       - Precision<br/>
+       - Recall<br/>
+       - F1 Score<br/><br/>
+       Special attention was paid to <strong>F1 Score</strong> to balance precision and recall under data imbalance.<br/>
+       Confusion matrix was used to visualize false positives and false negatives.
+     </p>
+</div>
+<div style="width: 45%; font-size: 14px;text-align: left;">
+<p><strong>Feature Importance</strong></p>
+<p>
+       The most informative features were identified based on their contribution to decision splits:<br/>
+       - PM2.5 (rolling mean)<br/>
+       - PM10 (rolling std)<br/>
+       - NO2<br/>
+       - Hour and Month (temporal features)<br/><br/>
+       Bar plot of feature importance was generated to aid in interpretability and explainability.
+     </p>
+</div>
+</div>
 <!-- Check out here if you'd like the equations numbered: https://jupyterbook.org/en/stable/content/math.html -->
 <!-- Check out here if you want more ocntrols on figures: https://jupyterbook.org/en/stable/content/figures.html -->
 <h2 id="Results"><strong>Results</strong><a class="anchor-link" href="#Results">¶</a></h2><h3 id="(1)-Neural-Network-Interpolation-Map">(1) Neural Network Interpolation Map<a class="anchor-link" href="#(1)-Neural-Network-Interpolation-Map">¶</a></h3><style>
@@ -7597,7 +7750,13 @@ monitoring stations. AQI levels generally increase during the summer months, pea
 <p style="text-align: center; font-size: 18px; color: #333;">
 <strong>Figure 4.</strong> Forecasted AQI Values for 2025–2026
 </p>
-<h3 id="(3)-AQI-Anomaly-Detection">(3) AQI Anomaly Detection<a class="anchor-link" href="#(3)-AQI-Anomaly-Detection">¶</a></h3><p style="text-align: center; font-size: 18px; color: #333;">
+<h3 id="(3)-AQI-Anomaly-Detection">(3) AQI Anomaly Detection<a class="anchor-link" href="#(3)-AQI-Anomaly-Detection">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
+  The confusion matrix highlights the model's conservative design for detecting anomalies. Among the 438,984 test samples, the model correctly predicted <strong>70,695 true positives</strong> (anomalous periods) and <strong>302,556 true negatives</strong> (normal periods). The recall for the anomaly class reached <strong>86.2%</strong>, indicating strong capability in capturing real anomaly events.
+</p>
+<p style="text-align: left; font-size: 18px; color: #333;">
+  However, the model also generated <strong>54,412 false positives</strong> — normal events misclassified as anomalies. This led to a <strong>precision of 56.5%</strong> for the anomaly class, revealing a trade-off where the model favors sensitivity over specificity. In real-world deployment, this could result in frequent alerts, which may require post-filtering or rule-based confirmation to reduce alarm fatigue.
+</p>
+<p style="text-align: center; font-size: 18px; color: #333;">
 <strong>Table 1.</strong> Evaluation of Test Dataset
 </p>
 <table>
@@ -7648,12 +7807,21 @@ monitoring stations. AQI levels generally increase during the summer months, pea
 </tr>
 </tbody>
 </table>
+<p style="text-align: left; font-size: 18px; color: #333;">
+    In terms of feature contributions, the <strong>feature importance plot</strong> shows that <code>O3</code>, <code>PM10</code>, <code>PM2.5</code>, and <code>SO2</code> were the most influential predictors. These variables directly reflect pollution severity and align with known AQI determinants. Rolling statistics (mean/std) and temporal context (hour/month) contributed marginally, suggesting the model relied more on absolute pollutant levels than patterns over time.
+</p>
 <img alt="GIF 1" src="img/Feature Importance.png" style="display: block; height: 410px; width: auto; margin: 0 auto;"/>
 <p style="text-align: center; font-size: 18px; color: #333;">
 <strong>Figure 5.</strong> Feature Importance
 </p>
-<h2 id="Discussion"><strong>Discussion</strong><a class="anchor-link" href="#Discussion">¶</a></h2><p>Discussion. <strong>No code blocks allowed in this section</strong>.</p>
-<h3 id="sub-heading-of-discussion">sub-heading of discussion<a class="anchor-link" href="#sub-heading-of-discussion">¶</a></h3><h3 id="Conclusions"><strong>Conclusions</strong><a class="anchor-link" href="#Conclusions">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
+<h2 id="Discussion"><strong>Discussion</strong><a class="anchor-link" href="#Discussion">¶</a></h2><h3 id="Gap-in-Monitoring-Station-Distribution">Gap in Monitoring Station Distribution<a class="anchor-link" href="#Gap-in-Monitoring-Station-Distribution">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
+The sparse distribution of monitoring stations in Taiwan’s central mountainous region led to noticeable interpolation gaps. This spatial limitation reduced the accuracy of neural network-based AQI interpolation. Future work should consider incorporating satellite data or terrain-aware models to improve coverage.
+</p>
+<h3 id="Anomaly-Labeling-Scope">Anomaly Labeling Scope<a class="anchor-link" href="#Anomaly-Labeling-Scope">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
+This study only labeled anomalies based on individual pollutant thresholds. While effective for detecting isolated spikes, it lacks sensitivity to complex multi-pollutant events. Incorporating composite anomaly definitions may better reflect real-world pollution episodes.
+</p>
+<h3 id="Conclusions"><strong>Conclusions</strong><a class="anchor-link" href="#Conclusions">¶</a></h3><p style="text-align: left; font-size: 18px; color: #333;">
+This study proposed a three-part framework to improve air quality analysis and forecasting. First, a neural network interpolation method was applied to reconstruct spatial AQI distributions from sparse monitoring stations. Second, a one-year AQI forecasting model based on XGBoost achieved strong predictive performance (average RMSE ≈ 2.9), capturing both seasonal trends and hourly fluctuations. Third, an anomaly detection module using Random Forest, combined with statistical thresholding and SMOTE resampling, successfully detected rare pollution events with high recall (86.2%) and acceptable precision (56.5%). This demonstrates the framework’s capability in recognizing short-term air quality hazards while maintaining robustness against class imbalance. While the proposed models are scalable, caution must be taken to prevent over-extrapolation and outdated predictions due to shifting pollution patterns or insufficient station coverage.
 </p>
 </div>
 </div>
@@ -9794,16 +9962,16 @@ Progress: 8000/8760 steps completed (91.3%)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="(3)-Anomaly-Detection">(3) Anomaly Detection<a class="anchor-link" href="#(3)-Anomaly-Detection">¶</a></h3><p>For methods used in this project, we used Google Colab to construct the model</p>
+<h3 id="(3)-Anomaly-Detection">(3) Anomaly Detection<a class="anchor-link" href="#(3)-Anomaly-Detection">¶</a></h3><p>For more detail, please refer to <a href="https://colab.research.google.com/drive/16qqychsYe8JLQIKI_Om9ehf1mSRHAr3E?usp=sharing" target="_blank">https://colab.research.google.com/drive/16qqychsYe8JLQIKI_Om9ehf1mSRHAr3E?usp=sharing</a>.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ee6b336c">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=5f9b057c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -9827,19 +9995,19 @@ Progress: 8000/8760 steps completed (91.3%)
 <span class="n">files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">data_folder</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.csv'</span><span class="p">)])</span>
 <span class="n">train_files</span> <span class="o">=</span> <span class="n">files</span><span class="p">[:</span><span class="mi">35</span><span class="p">]</span>
 <span class="n">test_files</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">35</span><span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training files: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_files</span><span class="p">)</span><span class="si">}</span><span class="s2">, Testing files: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_files</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># print(f"Training files: {len(train_files)}, Testing files: {len(test_files)}")</span>
 
 <span class="c1"># Data processing function</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_and_process</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Processing file </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="c1"># print(f"Processing file {i+1}/{len(files)}: {file}")</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_folder</span><span class="p">,</span> <span class="n">file</span><span class="p">),</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s1">'datacreationdate'</span><span class="p">])</span>
         <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">'datacreationdate'</span><span class="p">:</span> <span class="s1">'time'</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">'station'</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_6H.csv'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'time'</span><span class="p">)</span>
-        <span class="n">df</span><span class="p">[</span><span class="n">pollutants</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">pollutants</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">'ffill'</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">pollutants</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">pollutants</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">ffill</span><span class="p">()</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">'hour'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">'month'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span>
 
@@ -9852,21 +10020,21 @@ Progress: 8000/8760 steps completed (91.3%)
             <span class="n">df</span><span class="p">[</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s1">_rolling_std'</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
 
         <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Processed </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+        <span class="c1"># print(f"Processed {file} in {time.time() - start_time:.2f} seconds")</span>
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
 <span class="c1"># Load data</span>
 <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 <span class="n">train_val_df</span> <span class="o">=</span> <span class="n">load_and_process</span><span class="p">(</span><span class="n">train_files</span><span class="p">)</span>
 <span class="n">test_df</span> <span class="o">=</span> <span class="n">load_and_process</span><span class="p">(</span><span class="n">test_files</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Train+Val shape: </span><span class="si">{</span><span class="n">train_val_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, Test shape: </span><span class="si">{</span><span class="n">test_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Data loading time: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+<span class="c1"># print(f"Train+Val shape: {train_val_df.shape}, Test shape: {test_df.shape}")</span>
+<span class="c1"># print(f"Data loading time: {time.time() - start_time:.2f} seconds")</span>
 
 <span class="c1"># Split train and validation data</span>
 <span class="n">split_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_val_df</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.8</span><span class="p">)</span>
 <span class="n">train_df</span> <span class="o">=</span> <span class="n">train_val_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">split_idx</span><span class="p">]</span>
 <span class="n">val_df</span> <span class="o">=</span> <span class="n">train_val_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">split_idx</span><span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Train shape: </span><span class="si">{</span><span class="n">train_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, Val shape: </span><span class="si">{</span><span class="n">val_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># print(f"Train shape: {train_df.shape}, Val shape: {val_df.shape}")</span>
 
 <span class="c1"># Features and labels</span>
 <span class="n">features</span> <span class="o">=</span> <span class="n">pollutants</span> <span class="o">+</span> <span class="p">[</span><span class="s1">'hour'</span><span class="p">,</span> <span class="s1">'month'</span><span class="p">]</span> <span class="o">+</span> \
@@ -9877,14 +10045,14 @@ Progress: 8000/8760 steps completed (91.3%)
 <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">train_df</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 <span class="n">X_val</span><span class="p">,</span> <span class="n">y_val</span> <span class="o">=</span> <span class="n">val_df</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">val_df</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
 <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="n">features</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">test_df</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"X_train shape: </span><span class="si">{</span><span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, X_test shape: </span><span class="si">{</span><span class="n">X_test</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"NaNs in X_train:"</span><span class="p">,</span> <span class="n">X_train</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="c1"># print(f"X_train shape: {X_train.shape}, X_test shape: {X_test.shape}")</span>
+<span class="c1"># print("NaNs in X_train:", X_train.isna().sum().sum())</span>
 
 <span class="c1"># Handle imbalance</span>
 <span class="n">smote</span> <span class="o">=</span> <span class="n">SMOTE</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">sampling_strategy</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 <span class="n">X_train_resampled</span><span class="p">,</span> <span class="n">y_train_resampled</span> <span class="o">=</span> <span class="n">smote</span><span class="o">.</span><span class="n">fit_resample</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SMOTE shape: </span><span class="si">{</span><span class="n">X_train_resampled</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, SMOTE time: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+<span class="c1"># print(f"SMOTE shape: {X_train_resampled.shape}, SMOTE time: {time.time() - start_time:.2f} seconds")</span>
 
 <span class="c1"># Train Random Forest + GridSearchCV</span>
 <span class="n">param_grid</span> <span class="o">=</span> <span class="p">{</span>
@@ -9939,1150 +10107,7 @@ Progress: 8000/8760 steps completed (91.3%)
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Training files: 35, Testing files: 36
-Processing file 1/35: Annan_45_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Annan_45_modified_6H.csv in 0.39 seconds
-Processing file 2/35: Banqiao_6_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Banqiao_6_modified_6H.csv in 0.32 seconds
-Processing file 3/35: Cailiao_8_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Cailiao_8_modified_6H.csv in 0.34 seconds
-Processing file 4/35: Changhua_33_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Changhua_33_modified_6H.csv in 0.33 seconds
-Processing file 5/35: Chaozhou_60_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Chaozhou_60_modified_6H.csv in 0.31 seconds
-Processing file 6/35: Chiayi_42_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Chiayi_42_modified_6H.csv in 0.33 seconds
-Processing file 7/35: Dali_30_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Dali_30_modified_6H.csv in 0.36 seconds
-Processing file 8/35: Daliao_51_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Daliao_51_modified_6H.csv in 0.31 seconds
-Processing file 9/35: Dayuan_18_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Dayuan_18_modified_6H.csv in 0.39 seconds
-Processing file 10/35: Dongshan_66_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Dongshan_66_modified_6H.csv in 0.29 seconds
-Processing file 11/35: Douliu_37_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Douliu_37_modified_6H.csv in 0.31 seconds
-Processing file 12/35: Erlin_35_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Erlin_35_modified_6H.csv in 0.48 seconds
-Processing file 13/35: Fengyuan_28_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Fengyuan_28_modified_6H.csv in 0.49 seconds
-Processing file 14/35: Fuxing_71_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Fuxing_71_modified_6H.csv in 0.33 seconds
-Processing file 15/35: Guanyin_19_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Guanyin_19_modified_6H.csv in 0.51 seconds
-Processing file 16/35: Guting_14_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Guting_14_modified_6H.csv in 0.35 seconds
-Processing file 17/35: Hengchun_61_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Hengchun_61_modified_6H.csv in 0.50 seconds
-Processing file 18/35: Hsinchu_24_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Hsinchu_24_modified_6H.csv in 0.39 seconds
-Processing file 19/35: Hualien_63_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Hualien_63_modified_6H.csv in 0.48 seconds
-Processing file 20/35: Hukou_22_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Hukou_22_modified_6H.csv in 0.42 seconds
-Processing file 21/35: Keelung_1_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Keelung_1_modified_6H.csv in 0.34 seconds
-Processing file 22/35: Linkou_9_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Linkou_9_modified_6H.csv in 0.46 seconds
-Processing file 23/35: Linyuan_52_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Linyuan_52_modified_6H.csv in 0.40 seconds
-Processing file 24/35: Longtan_21_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Longtan_21_modified_6H.csv in 0.35 seconds
-Processing file 25/35: Lunbei_38_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Lunbei_38_modified_6H.csv in 0.36 seconds
-Processing file 26/35: Magong_78_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Magong_78_modified_6H.csv in 0.28 seconds
-Processing file 27/35: Mailiao_83_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Mailiao_83_modified_6H.csv in 0.42 seconds
-Processing file 28/35: Matsu_75_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Matsu_75_modified_6H.csv in 0.35 seconds
-Processing file 29/35: Meinong_47_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Meinong_47_modified_6H.csv in 0.39 seconds
-Processing file 30/35: Miaoli_26_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Miaoli_26_modified_6H.csv in 0.33 seconds
-Processing file 31/35: Nantou_36_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Nantou_36_modified_6H.csv in 0.76 seconds
-Processing file 32/35: Nanzi_53_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Nanzi_53_modified_6H.csv in 0.46 seconds
-Processing file 33/35: Pingtung_59_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Pingtung_59_modified_6H.csv in 0.60 seconds
-Processing file 34/35: Pingzhen_20_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Pingzhen_20_modified_6H.csv in 0.31 seconds
-Processing file 35/35: Puli_72_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Puli_72_modified_6H.csv in 0.29 seconds
-Processing file 1/36: Puzi_40_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Puzi_40_modified_6H.csv in 0.33 seconds
-Processing file 2/36: Qianjin_56_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Qianjin_56_modified_6H.csv in 0.42 seconds
-Processing file 3/36: Qianzhen_57_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Qianzhen_57_modified_6H.csv in 0.33 seconds
-Processing file 4/36: Qiaotou_48_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Qiaotou_48_modified_6H.csv in 0.31 seconds
-Processing file 5/36: Renwu_49_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Renwu_49_modified_6H.csv in 0.36 seconds
-Processing file 6/36: Sanyi_27_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Sanyi_27_modified_6H.csv in 0.37 seconds
-Processing file 7/36: Shalu_29_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Shalu_29_modified_6H.csv in 0.45 seconds
-Processing file 8/36: Shanhua_44_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Shanhua_44_modified_6H.csv in 0.34 seconds
-Processing file 9/36: Shilin_11_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Shilin_11_modified_6H.csv in 0.50 seconds
-Processing file 10/36: Songshan_15_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Songshan_15_modified_6H.csv in 0.35 seconds
-Processing file 11/36: Tainan_46_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Tainan_46_modified_6H.csv in 0.33 seconds
-Processing file 12/36: Taitung_62_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Taitung_62_modified_6H.csv in 0.35 seconds
-Processing file 13/36: Taixi_41_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Taixi_41_modified_6H.csv in 0.38 seconds
-Processing file 14/36: Tamsui_10_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Tamsui_10_modified_6H.csv in 0.44 seconds
-Processing file 15/36: Taoyuan_17_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Taoyuan_17_modified_6H.csv in 0.30 seconds
-Processing file 16/36: Toufen_25_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Toufen_25_modified_6H.csv in 0.37 seconds
-Processing file 17/36: Tucheng_5_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Tucheng_5_modified_6H.csv in 0.45 seconds
-Processing file 18/36: Wanhua_13_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Wanhua_13_modified_6H.csv in 0.26 seconds
-Processing file 19/36: Wanli_3_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Wanli_3_modified_6H.csv in 0.33 seconds
-Processing file 20/36: Xianxi_34_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xianxi_34_modified_6H.csv in 0.42 seconds
-Processing file 21/36: Xiaogang_58_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xiaogang_58_modified_6H.csv in 0.44 seconds
-Processing file 22/36: Xindian_4_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xindian_4_modified_6H.csv in 0.46 seconds
-Processing file 23/36: Xingang_39_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xingang_39_modified_6H.csv in 0.33 seconds
-Processing file 24/36: Xinying_43_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xinying_43_modified_6H.csv in 0.33 seconds
-Processing file 25/36: Xinzhuang_7_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xinzhuang_7_modified_6H.csv in 0.46 seconds
-Processing file 26/36: Xitun_32_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xitun_32_modified_6H.csv in 0.32 seconds
-Processing file 27/36: Xizhi_2_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Xizhi_2_modified_6H.csv in 0.37 seconds
-Processing file 28/36: Yangming_64_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Yangming_64_modified_6H.csv in 0.30 seconds
-Processing file 29/36: Yilan_65_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Yilan_65_modified_6H.csv in 0.31 seconds
-Processing file 30/36: Yonghe_70_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Yonghe_70_modified_6H.csv in 0.85 seconds
-Processing file 31/36: Zhongli_68_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zhongli_68_modified_6H.csv in 0.27 seconds
-Processing file 32/36: Zhongming_31_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zhongming_31_modified_6H.csv in 0.31 seconds
-Processing file 33/36: Zhongshan_12_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zhongshan_12_modified_6H.csv in 0.29 seconds
-Processing file 34/36: Zhudong_23_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zhudong_23_modified_6H.csv in 0.42 seconds
-Processing file 35/36: Zhushan_69_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zhushan_69_modified_6H.csv in 0.29 seconds
-Processing file 36/36: Zuoying_54_modified_6H.csv
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>&lt;ipython-input-3-8cd645b73dfb&gt;:34: FutureWarning: DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df[pollutants] = df[pollutants].clip(lower=0).fillna(method='ffill')
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processed Zuoying_54_modified_6H.csv in 0.31 seconds
-Train+Val shape: (426790, 25), Test shape: (438984, 25)
-Data loading time: 27.33 seconds
-Train shape: (341432, 25), Val shape: (85358, 25)
-X_train shape: (341432, 20), X_test shape: (438984, 20)
-NaNs in X_train: 0
-SMOTE shape: (417124, 20), SMOTE time: 28.19 seconds
-GridSearchCV time: 14574.33 seconds
+<pre>GridSearchCV time: 14506.00 seconds
 Best parameters: {'max_depth': 10, 'min_samples_leaf': 1, 'min_samples_split': 5, 'n_estimators': 200}
 Test set evaluation:
                precision    recall  f1-score   support
@@ -11121,7 +10146,7 @@ weighted avg     0.8894    0.8503    0.8610    438984
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=853116f3c412ffa0">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d66e801981df630f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
