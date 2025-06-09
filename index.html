@@ -7529,37 +7529,60 @@ a.anchor-link {
 \arg\min\limits_{\textbf{a}}  ||\textbf{y} − \textbf{Xa}||_2^2 + \lambda||\textbf{a}||_2^2
 $$</p>
 <!-- Check out here if you'd like the equations numbered: https://jupyterbook.org/en/stable/content/math.html -->
-<p>Inserting a figure:</p>
-<p><img alt="csrsr" src="csrsr_logo.png"/></p>
-<p><strong>Figure 1</strong>. CSRSR logo.</p>
 <!-- Check out here if you want more ocntrols on figures: https://jupyterbook.org/en/stable/content/figures.html -->
-<h2 id="Results"><strong>Results</strong><a class="anchor-link" href="#Results">¶</a></h2><img alt="GIF 1" src="2017.gif" style="display: inline-block; width: 30%; margin: 0 1%;"/>
-<img alt="GIF 2" src="2018.gif" style="display: inline-block; width: 30%; margin: 0 1%;"/>
-<img alt="GIF 3" src="2019.gif" style="display: inline-block; width: 30%; margin: 0 1%;"/>
-<p>Making a table:</p>
-<p><strong>Table 1</strong>. Something about the results.</p>
+<h2 id="Results"><strong>Results</strong><a class="anchor-link" href="#Results">¶</a></h2><h3 id="(1)-Neural-Network-Interpolation-Map">(1) Neural Network Interpolation Map<a class="anchor-link" href="#(1)-Neural-Network-Interpolation-Map">¶</a></h3><img alt="GIF 1" src="2017.gif" style="display: inline-block; height: 150px; width: auto; margin: 0 1%;"/>
+<img alt="GIF 2" src="2018.gif" style="display: inline-block; height: 150px; width: auto; margin: 0 1%;"/>
+<img alt="GIF 3" src="2019.gif" style="display: inline-block; height: 150px; width: auto%; margin: 0 1%;"/>
+<p><strong>Figure 1</strong>. Interpolation result of 2017-2019</p>
+<h3 id="(2)">(2)<a class="anchor-link" href="#(2)">¶</a></h3><h3 id="(3)-AQI-Anomaly-Detection">(3) AQI Anomaly Detection<a class="anchor-link" href="#(3)-AQI-Anomaly-Detection">¶</a></h3><p><strong>Table 1</strong>. Something about the results.</p>
 <table>
 <thead>
 <tr>
-<th>Label</th>
-<th>Model</th>
-<th>RMSE</th>
+<th style="text-align:left">Class</th>
+<th style="text-align:left">Precision</th>
+<th style="text-align:left">Recall</th>
+<th style="text-align:left">F1-Score</th>
+<th style="text-align:left">Support</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Wish</td>
-<td>Linear (Ridge)</td>
-<td>0.716</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">0.9639</td>
+<td style="text-align:left">0.8476</td>
+<td style="text-align:left">0.9020</td>
+<td style="text-align:left">356968</td>
 </tr>
 <tr>
-<td>Hibana</td>
-<td>Random Forest</td>
-<td>0.384</td>
+<td style="text-align:left">1</td>
+<td style="text-align:left">0.5651</td>
+<td style="text-align:left">0.8620</td>
+<td style="text-align:left">0.6826</td>
+<td style="text-align:left">82016</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Accuracy</strong></td>
+<td style="text-align:left"></td>
+<td style="text-align:left"></td>
+<td style="text-align:left">0.8503</td>
+<td style="text-align:left">438984</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Macro Avg</strong></td>
+<td style="text-align:left">0.7645</td>
+<td style="text-align:left">0.8548</td>
+<td style="text-align:left">0.7923</td>
+<td style="text-align:left">438984</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Weighted Avg</strong></td>
+<td style="text-align:left">0.8894</td>
+<td style="text-align:left">0.8503</td>
+<td style="text-align:left">0.8610</td>
+<td style="text-align:left">438984</td>
 </tr>
 </tbody>
 </table>
-<h3 id="sub-heading-of-results">sub-heading of results<a class="anchor-link" href="#sub-heading-of-results">¶</a></h3><p>Feel free to divide this section as you like.</p>
 <h2 id="Discussion"><strong>Discussion</strong><a class="anchor-link" href="#Discussion">¶</a></h2><p>Discussion. <strong>No code blocks allowed in this section</strong>.</p>
 <h3 id="sub-heading-of-discussion">sub-heading of discussion<a class="anchor-link" href="#sub-heading-of-discussion">¶</a></h3><p>Feel free to divide this section as you like.</p>
 <h3 id="Conclusions"><strong>Conclusions</strong><a class="anchor-link" href="#Conclusions">¶</a></h3><p>One paragraph concluding your work.</p>
@@ -7610,13 +7633,13 @@ $$</p>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="sub-heading-of-methods">sub-heading of methods<a class="anchor-link" href="#sub-heading-of-methods">¶</a></h3><p>Feel free to divide the method section as you like.</p>
-<h1 id="References">References<a class="anchor-link" href="#References">¶</a></h1><!-- For in-line citations, follow one of the common format in the academic literature. Example: (Banks et al., 2019) or "This work is done by Banks et al. (2019)." -->
+<h1 id="References"><strong>References</strong><a class="anchor-link" href="#References">¶</a></h1><!-- For in-line citations, follow one of the common format in the academic literature. Example: (Banks et al., 2019) or "This work is done by Banks et al. (2019)." -->
 <!-- Below is the suggested reference format. Add DOI whenever possible! -->
 <ol>
-<li><p>Banks, G. C., et al. (2019). Answers to 18 Questions About Open Science Practices. <em>Journal of Business and Psychology</em>, <em>34</em>(3), 257–270. <a href="https://doi.org/10.1007/s10869-018-9547-8">https://doi.org/10.1007/s10869-018-9547-8</a> | <a href="https://www.researchgate.net/publication/325327886_Answers_to_18_Questions_About_Open_Science_Practices">Full text available on ResearchGate</a> (accessed on February 16, 2023)</p>
-</li>
-<li><p>Piller, C. (2022). Blots on a field? <em>Science</em>, <em>377</em>(6604), 358–363. <a href="https://doi.org/10.1126/science.add9993">https://doi.org/10.1126/science.add9993</a></p>
-</li>
+<li>Kumar Dongre, P., Patel, V., Bhoi, U., &amp; Maltare, N. N. (2025). An outlier detection framework for Air Quality Index prediction using linear and ensemble models. <em>Decision Analytics Journal</em>, 100546–100546. <a href="https://doi.org/10.1016/j.dajour.2025.100546">https://doi.org/10.1016/j.dajour.2025.100546</a></li>
+<li>Mirabelli, M. C., Ebelt, S., &amp; Damon, S. A. (2020). Air Quality Index and air quality awareness among adults in the United States. <em>Environmental Research, 183</em>, 109185. <a href="https://doi.org/10.1016/j.envres.2020.109185">https://doi.org/10.1016/j.envres.2020.109185</a></li>
+<li>Stanaway, J. D., Afshin, A., Gakidou, E., Lim, S. S., et al. (2018). Global, regional, and national comparative risk assessment of 84 behavioural, environmental and occupational, and metabolic risks or clusters of risks for 195 countries and territories, 1990–2017: a systematic analysis for the Global Burden of Disease Study 2017. <em>The Lancet, 392</em>(10159), 1923–1994.
+<a href="https://doi.org/10.1016/s0140-6736(18)32225-6">https://doi.org/10.1016/s0140-6736(18)32225-6</a></li>
 </ol>
 <!-- If you'd like to use Bibtex, here's a very useful introductory article showing how to use it in Jupyter Book: https://jupyterbook.org/en/stable/content/citations.html -->
 </div>
